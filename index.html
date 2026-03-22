@@ -215,7 +215,11 @@ function renderEntries() {
   if (activeFilter) {
     const tagMatches = entries.filter(e => e.text.toLowerCase().includes(activeFilter.toLowerCase()));
     tagMatches.sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
-    feed.insertAdjacentHTML('beforeend', '<div class="flex items-center px-1 mb-1"><h2 class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#2E5BFF]">' + activeFilter + '</h2></div>');
+    feed.insertAdjacentHTML('beforeend',
+      '<div class="flex items-center justify-between px-1 mb-1">' +
+        '<h2 class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#2E5BFF]">' + activeFilter + '</h2>' +
+        '<button onclick="clearFilter()" class="text-[10px] font-bold text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg border border-gray-200 bg-white">Show All</button>' +
+      '</div>');
     if (tagMatches.length) {
       tagMatches.forEach(e => feed.insertAdjacentHTML('beforeend', buildCard(e, search)));
     } else {
