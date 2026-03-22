@@ -196,7 +196,9 @@ function renderTagCloud() {
   if (allTags.size === 0) { cloud.innerHTML = ''; return; }
   cloud.innerHTML = Array.from(allTags).sort().map(t => {
     const isFU = t === '#followup';
-    return `<span class="tag ${isFU ? 'tag-followup' : ''}" onclick="filterByTag('${t}')">${t}</span>`;
+    const isActive = activeFilter === t;
+    const style = isActive ? 'outline: 2px solid #2E5BFF;' : '';
+    return `<span class="tag ${isFU ? 'tag-followup' : ''}" style="${style}" onclick="toggleTagFilter('${t}')">${t}</span>`;
   }).join('');
 }
 
@@ -256,6 +258,14 @@ function buildCard(e, search) {
 
 function togglePin(id) { entries = entries.map(e => e.id===id ? Object.assign({},e,{pinned:!e.pinned}) : e); persist(); renderEntries(); }
 function deleteEntry(id) { if (!confirm('Delete this entry?')) return; entries = entries.filter(e => e.id!==id); persist(); renderEntries(); }
+function toggleTagFilter(tag) {
+  if (activeFilter === tag) {
+    clearFilter();
+  } else {
+    filterByTag(tag);
+  }
+}
+
 function filterByTag(tag) { activeFilter=tag; document.getElementById('filterBar').classList.remove('hidden'); document.getElementById('filterBar').classList.add('flex'); document.getElementById('filterTag').textContent=tag; renderEntries(); }
 function clearFilter() { activeFilter=null; document.getElementById('filterBar').classList.add('hidden'); document.getElementById('filterBar').classList.remove('flex'); renderEntries(); }
 
