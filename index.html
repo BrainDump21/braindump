@@ -211,27 +211,39 @@ function renderEntries() {
   renderTagCloud();
   feed.innerHTML = '';
 
-  // If tag filter active, show matching entries first in their own section
   if (activeFilter) {
+    // Show tagged entries section at top with a clear button
     const tagMatches = entries.filter(e => e.text.toLowerCase().includes(activeFilter.toLowerCase()));
     tagMatches.sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
-    feed.insertAdjacentHTML('beforeend',
-      '<div class="flex items-center justify-between px-1 mb-1">' +
-        '<h2 class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#2E5BFF]">' + activeFilter + '</h2>' +
-        '<button onclick="clearFilter()" class="text-[10px] font-bold text-gray-400 hover:text-gray-600 px-2 py-1 rounded-lg border border-gray-200 bg-white">Show All</button>' +
-      '</div>');
+
+    const header = document.createElement('div');
+    header.className = 'flex items-center justify-between px-1 mb-2 mt-1';
+    header.innerHTML =
+      '<h2 class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#2E5BFF]">' + activeFilter + '</h2>' +
+      '<button onclick="clearFilter()" style="font-size:11px;font-weight:700;color:#747688;background:white;border:1px solid #e5e7eb;border-radius:8px;padding:3px 10px;cursor:pointer;">&#x2715; Show All</button>';
+    feed.appendChild(header);
+
     if (tagMatches.length) {
       tagMatches.forEach(e => feed.insertAdjacentHTML('beforeend', buildCard(e, search)));
     } else {
-      feed.insertAdjacentHTML('beforeend', '<p class="text-xs text-gray-300 px-1 mb-2">No entries with this tag</p>');
+      feed.insertAdjacentHTML('beforeend', '<p class="text-xs text-gray-300 px-1 mb-2">No entries found</p>');
     }
-    feed.insertAdjacentHTML('beforeend', '<div class="my-3 border-t border-gray-200"></div>');
+
+    // Divider before recent entries
+    const divider = document.createElement('div');
+    divider.style.cssText = 'border-top:1px solid #e5e7eb;margin:12px 0;';
+    feed.appendChild(divider);
   }
 
-  // Always show all recent entries below
-  let all = entries.filter(e => !search || e.text.toLowerCase().includes(search));
+  // Always show Recent Entries section
+  const all = entries.filter(e => !search || e.text.toLowerCase().includes(search));
   all.sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
-  feed.insertAdjacentHTML('beforeend', '<div class="flex items-center px-1"><h2 class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-gray-400">Recent Entries</h2></div>');
+
+  const recentHeader = document.createElement('div');
+  recentHeader.className = 'flex items-center px-1';
+  recentHeader.innerHTML = '<h2 class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-gray-400">Recent Entries</h2>';
+  feed.appendChild(recentHeader);
+
   if (!all.length) {
     feed.insertAdjacentHTML('beforeend', '<div class="text-center py-16 text-gray-300"><span class="material-symbols-outlined text-[52px] block mb-3">psychology</span><p class="text-sm font-semibold">No entries yet</p></div>');
     return;
