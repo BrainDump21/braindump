@@ -194,10 +194,13 @@ function renderTagCloud() {
     tags.forEach(t => allTags.add(t.toLowerCase()));
   });
   if (allTags.size === 0) { cloud.innerHTML = ''; return; }
-  cloud.innerHTML = Array.from(allTags).sort().map(t => {
-    const isFU = t === '#followup';
-    const isActive = activeFilter === t;
-    const style = isActive ? 'outline: 2px solid #2E5BFF;' : '';
+  // Store original case tags
+  const origTags = new Set();
+  entries.forEach(e => { (e.text.match(/#\w+/g)||[]).forEach(t => origTags.add(t)); });
+  cloud.innerHTML = Array.from(origTags).sort().map(t => {
+    const isFU = t.toLowerCase() === '#followup';
+    const isActive = activeFilter && activeFilter.toLowerCase() === t.toLowerCase();
+    const style = isActive ? 'outline: 2px solid #2E5BFF; outline-offset: 2px;' : '';
     return `<span class="tag ${isFU ? 'tag-followup' : ''}" style="${style}" onclick="toggleTagFilter('${t}')">${t}</span>`;
   }).join('');
 }
@@ -205,19 +208,31 @@ function renderTagCloud() {
 function renderEntries() {
   const search = document.getElementById('searchInput').value.toLowerCase().trim();
   const feed = document.getElementById('entriesFeed');
-  let filtered = entries.filter(e => {
-    const ms = !search || e.text.toLowerCase().includes(search);
-    const mf = !activeFilter || e.text.toLowerCase().includes(activeFilter.toLowerCase());
-    return ms && mf;
-  });
-  filtered.sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
   renderTagCloud();
-  feed.innerHTML = '<div class="flex items-center px-1"><h2 class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-gray-400">Recent Entries</h2></div>';
-  if (!filtered.length) {
-    feed.innerHTML += '<div class="text-center py-16 text-gray-300"><span class="material-symbols-outlined text-[52px] block mb-3">psychology</span><p class="text-sm font-semibold">No entries yet</p></div>';
+  feed.innerHTML = '';
+
+  // If tag filter active, show matching entries first in their own section
+  if (activeFilter) {
+    const tagMatches = entries.filter(e => e.text.toLowerCase().includes(activeFilter.toLowerCase()));
+    tagMatches.sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
+    feed.insertAdjacentHTML('beforeend', '<div class="flex items-center px-1 mb-1"><h2 class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-[#2E5BFF]">' + activeFilter + '</h2></div>');
+    if (tagMatches.length) {
+      tagMatches.forEach(e => feed.insertAdjacentHTML('beforeend', buildCard(e, search)));
+    } else {
+      feed.insertAdjacentHTML('beforeend', '<p class="text-xs text-gray-300 px-1 mb-2">No entries with this tag</p>');
+    }
+    feed.insertAdjacentHTML('beforeend', '<div class="my-3 border-t border-gray-200"></div>');
+  }
+
+  // Always show all recent entries below
+  let all = entries.filter(e => !search || e.text.toLowerCase().includes(search));
+  all.sort((a,b) => (b.pinned?1:0) - (a.pinned?1:0));
+  feed.insertAdjacentHTML('beforeend', '<div class="flex items-center px-1"><h2 class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-gray-400">Recent Entries</h2></div>');
+  if (!all.length) {
+    feed.insertAdjacentHTML('beforeend', '<div class="text-center py-16 text-gray-300"><span class="material-symbols-outlined text-[52px] block mb-3">psychology</span><p class="text-sm font-semibold">No entries yet</p></div>');
     return;
   }
-  filtered.forEach(e => feed.insertAdjacentHTML('beforeend', buildCard(e, search)));
+  all.forEach(e => feed.insertAdjacentHTML('beforeend', buildCard(e, search)));
 }
 
 function buildCard(e, search) {
@@ -259,7 +274,7 @@ function buildCard(e, search) {
 function togglePin(id) { entries = entries.map(e => e.id===id ? Object.assign({},e,{pinned:!e.pinned}) : e); persist(); renderEntries(); }
 function deleteEntry(id) { if (!confirm('Delete this entry?')) return; entries = entries.filter(e => e.id!==id); persist(); renderEntries(); }
 function toggleTagFilter(tag) {
-  if (activeFilter === tag) {
+  if (activeFilter && activeFilter.toLowerCase() === tag.toLowerCase()) {
     clearFilter();
   } else {
     filterByTag(tag);
@@ -267,7 +282,7 @@ function toggleTagFilter(tag) {
 }
 
 function filterByTag(tag) { activeFilter=tag; document.getElementById('filterBar').classList.remove('hidden'); document.getElementById('filterBar').classList.add('flex'); document.getElementById('filterTag').textContent=tag; renderEntries(); }
-function clearFilter() { activeFilter=null; document.getElementById('filterBar').classList.add('hidden'); document.getElementById('filterBar').classList.remove('flex'); renderEntries(); }
+function clearFilter() { activeFilter=null; document.getElementById('filterBar').classList.add('hidden'); document.getElementById('filterBar').classList.remove('flex'); renderEntries(); renderTagCloud(); }
 
 function toggleShare(id, btn) {
   const pop = document.getElementById('share-'+id);
